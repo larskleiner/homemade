@@ -19,10 +19,10 @@ function homemade_giphy_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
-  $items['homemade/giphy/results/%'] = array(
+  $items['homemade/giphy/results/%/%'] = array(
     'title' => 'Giphy results page',
     'page callback' => 'homemade_giphy_result_page',
-    'page arguments' => array(3),
+    'page arguments' => array(3, 4),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -38,6 +38,7 @@ function homemade_giphy_theme($existing, $type, $theme, $path) {
     'homemade_giphy_result_list' => array(
       'variables' => array(
         'result' => array(),
+        'image_size' => NULL,
       ),
     ),
   );
@@ -53,6 +54,23 @@ function homemade_giphy_search_form($form, &$form_state) {
     '#required' => TRUE,
   );
 
+  $form['image_size'] = array(
+    '#title' => t('Select the image size you want to show in the results'),
+    '#type' => 'select',
+    '#default_value' => 'fixed_height',
+    '#options' => array(
+      'fixed_height' => t('Fixed height'),
+      'fixed_height_still' => t('Fixed height still'),
+      'fixed_height_downsampled' => t('Fixed height downsampled'),
+      'fixed_width' => t('Fixed width'),
+      'fixed_width_still' => t('Fixed width still'),
+      'fixed_width_downsampled' => t('Fixed width downsampled'),
+      'fixed_height_small' => t('Fixed height small'),
+      'fixed_height_small_still' => t('Fixed height small still'),
+      'fixed_width_small' => t('Fixed width small'),
+    ),
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Search'),
@@ -66,10 +84,21 @@ function homemade_giphy_search_form($form, &$form_state) {
  */
 function homemade_giphy_search_form_submit($form, &$form_state) {
   $search_query = urlencode($form_state['values']['search_query']);
-  $form_state['redirect'] = 'homemade/giphy/results/' . $search_query;
+  $image_size = urlencode($form_state['values']['image_size']);
+  $form_state['redirect'] = 'homemade/giphy/results/' . $search_query . '/' . $image_size;
 }
 
-function homemade_giphy_result_page($search_query) {
+/**
+ * Return the search result page.
+ *
+ * @param $search_query string
+ *   The search query.
+ * @param $image_size string
+ *   The image size filter selected.
+ * @return string
+ *   The themed search result list.
+ */
+function homemade_giphy_result_page($search_query, $image_size) {
   $search_url = GIPHY_SEARCH_URL . '?q=' . $search_query . '&api_key=' . GIPHY_API_KEY;
 
   try {
@@ -81,22 +110,32 @@ function homemade_giphy_result_page($search_query) {
 
   $result = drupal_json_decode($response->data);
 
-  return theme('homemade_giphy_result_list', array('result' => $result));
+  return theme('homemade_giphy_result_list', array(
+    'result' => $result,
+    'image_size' => $image_size
+  ));
 }
 
-function theme_homemade_giphy_result_list($result) {
+/**
+ * Return the themed search result list.
+ *
+ * @param $variables array
+ *   The theme variables.
+ * @return string
+ *   The search result list.
+ */
+function theme_homemade_giphy_result_list($variables) {
   $items = array();
-  foreach ($result['result']['data'] as $image) {
+  foreach ($variables['result']['data'] as $image) {
     $gif = theme('image', array(
-      'path' => $image['images']['fixed_height']['url'],
-      'width' => $image['images']['fixed_height']['width'],
-      'height' => $image['images']['fixed_height']['height'],
+      'path' => $image['images'][$variables['image_size']]['url'],
+      'width' => $image['images'][$variables['image_size']]['width'],
+      'height' => $image['images'][$variables['image_size']]['height'],
       'title' => t('!slug - rated !rating.', array('!slug' => $image['slug'], '!rating' => $image['rating'])),
     ));
     $items[$image['id']] = array(
       'data' => l($gif, $image['url'], array('html' => TRUE)),
     );
   }
-
   return theme('item_list', array('items' => $items));
 }
