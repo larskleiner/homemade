@@ -91,8 +91,11 @@ function theme_homemade_giphy_result_list($result) {
       'path' => $image['images']['fixed_height']['url'],
       'width' => $image['images']['fixed_height']['width'],
       'height' => $image['images']['fixed_height']['height'],
+      'title' => t('!slug - rated !rating.', array('!slug' => $image['slug'], '!rating' => $image['rating'])),
     ));
-    $items[] = l($gif, $image['url'], array('html' => TRUE));
+    $items[$image['id']] = array(
+      'data' => l($gif, $image['url'], array('html' => TRUE)),
+    );
   }
 
   return theme('item_list', array('items' => $items));
