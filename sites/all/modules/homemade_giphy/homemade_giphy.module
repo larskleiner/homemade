@@ -19,6 +19,13 @@ function homemade_giphy_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
+  $items['homemade/giphy/results/%'] = array(
+    'title' => 'Giphy results page',
+    'page callback' => 'homemade_giphy_result_page',
+    'page arguments' => array(3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
@@ -59,6 +66,10 @@ function homemade_giphy_search_form($form, &$form_state) {
  */
 function homemade_giphy_search_form_submit($form, &$form_state) {
   $search_query = urlencode($form_state['values']['search_query']);
+  $form_state['redirect'] = 'homemade/giphy/results/' . $search_query;
+}
+
+function homemade_giphy_result_page($search_query) {
   $search_url = GIPHY_SEARCH_URL . '?q=' . $search_query . '&api_key=' . GIPHY_API_KEY;
 
   try {
@@ -74,6 +85,15 @@ function homemade_giphy_search_form_submit($form, &$form_state) {
 }
 
 function theme_homemade_giphy_result_list($result) {
-  print_r($result);
-  exit();
+  $items = array();
+  foreach ($result['result']['data'] as $image) {
+    $gif = theme('image', array(
+      'path' => $image['images']['fixed_height']['url'],
+      'width' => $image['images']['fixed_height']['width'],
+      'height' => $image['images']['fixed_height']['height'],
+    ));
+    $items[] = l($gif, $image['url'], array('html' => TRUE));
+  }
+
+  return theme('item_list', array('items' => $items));
 }
