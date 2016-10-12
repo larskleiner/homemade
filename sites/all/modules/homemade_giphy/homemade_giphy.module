@@ -1,0 +1,57 @@
+<?php
+/**
+ * @file
+ * Search Giphy.
+ */
+
+
+define('GIPHY_SEARCH_URL', 'http://api.giphy.com/v1/gifs/search');
+define('GIPHY_API_KEY', 'dc6zaTOxFJmzC');
+
+/**
+ * Implements hook_menu().
+ */
+function homemade_giphy_menu() {
+  $items['homemade/giphy'] = array(
+    'title' => 'Search the Giphy API',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('homemade_giphy_search_form'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * The search form.
+ */
+function homemade_giphy_search_form($form, &$form_state) {
+  $form['search_query'] = array(
+    '#title' => t('Enter your search query'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Search'),
+  );
+
+  return $form;
+}
+
+/**
+ * Form submit handler for homemade_giphy_search_form().
+ */
+function homemade_giphy_search_form_submit($form, &$form_state) {
+  $search_query = urlencode($form_state['values']['search_query']);
+  $search_url = GIPHY_SEARCH_URL . '?q=' . $search_query . '&api_key=' . GIPHY_API_KEY;
+
+  try {
+    $result = drupal_http_request($search_url);
+  }
+  catch (Exception $e) {
+    watchdog_exception('homemade_giphy', $e);
+  }
+}

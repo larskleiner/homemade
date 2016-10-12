@@ -1,0 +1,6 @@
+name = Homemade Giphy
+description = Search the Giphy API
+core = 7.x
+package = Homemade
+version = 7.x-1.0
+
